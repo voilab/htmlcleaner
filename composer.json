@@ -1,0 +1,36 @@
+{
+    "name": "voilab/htmlcleaner",
+    "description": "A HTML cleaner based on SimpleXML, fast and customizable",
+    "keywords": [
+        "voilab",
+        "html",
+        "cleaner"
+    ],
+    "homepage": "http://www.voilab.ch",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Voilab",
+            "email": "fabien@voilab.org",
+            "homepage": "http://www.voilab.ch",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php" : ">=5.6.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit" : "*",
+        "scrutinizer/ocular": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "voilab\\cleaner\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "voilab\\cleaner\\tests\\": "tests"
+        }
+    }
+}
