@@ -1,0 +1,9 @@
+build
+docs
+vendor
+
+composer.lock
+
+.vagrant
+vagrant-bootstrap.sh
+Vagrantfile
