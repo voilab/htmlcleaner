@@ -90,4 +90,37 @@ class StandardTest extends TestCase {
             $this->cleaner->clean('<p>test <strong>test<em> test</p>')
         );
     }
+
+    public function testBadFormattedHtmlTag()
+    {
+        $this->cleaner->addAllowedTags(['p']);
+        $this->expectExceptionMessage('Bad formatted HTML');
+        $this->cleaner->clean('<p>test');
+    }
+
+    public function testBadFormattedHtmlContent()
+    {
+        $this->cleaner->addAllowedTags(['p']);
+        $this->expectExceptionMessage('Bad formatted HTML');
+        $this->cleaner->clean('<p>test < than test</p>');
+    }
+
+    public function testGreaterThanContentPass()
+    {
+        $this->cleaner->addAllowedTags(['p']);
+        $this->assertEquals(
+            '<p>test &gt; than test</p>',
+            $this->cleaner->clean('<p>test > than test</p>')
+        );
+    }
+
+    public function testBadFormattedHtmlAttribute()
+    {
+        $this->cleaner
+            ->addAllowedTags(['p'])
+            ->addAllowedAttributes(['class']);
+
+        $this->expectExceptionMessage('Bad formatted HTML');
+        $this->cleaner->clean('<p class=test>test</p>');
+    }
 }

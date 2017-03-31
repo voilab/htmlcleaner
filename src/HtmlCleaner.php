@@ -7,7 +7,8 @@ use SimpleXMLElement,
     voilab\cleaner\attribute\Keep,
     voilab\cleaner\attribute\Remove,
     voilab\cleaner\processor\Processor,
-    voilab\cleaner\processor\Standard as StandardProcessor;
+    voilab\cleaner\processor\Standard as StandardProcessor,
+    Exception;
 
 class HtmlCleaner {
 
@@ -145,7 +146,7 @@ class HtmlCleaner {
      */
     public function removeAllowedAttribute($name) : bool
     {
-        if (isset($this->allowedAttributes[$name])) {
+        if ($this->hasAllowedAttribute($name)) {
             unset($this->allowedAttributes[$name]);
             return true;
         }
@@ -201,7 +202,10 @@ class HtmlCleaner {
 
         // create a fake root element, so we can process strings with many
         // roots. Eg: <p>1</p><p>2</p> becomes <root><p>1</p><p>2</p></root>
-        $xml = new SimpleXMLElement('<root>' . $pre_html . '</root>');
+        $xml = @simplexml_load_string('<root>' . $pre_html . '</root>');
+        if ($xml === false) {
+            throw new Exception("Bad formatted HTML");
+        }
         $cleaned_html = '';
         if (count($xml->children())) {
             foreach ($xml->children() as $root) {
