@@ -112,18 +112,33 @@ $cleaner
 > Note that allowed attributes are not bound to a specific tag. In the example
 > above, the href attribute will be valid for every HTML tag.
 
-## Limitations
+## Known limitations
 
 ### Root mixed content
 Mixed content is not allowed in root position.
 
 ``` html
-<!-- not valid -->
-some root <strong>mixed</strong> <em>content</em>
+<!-- not valid: parts "some root " and " and " will disappear -->
+some root <strong>mixed</strong> and <em>content</em>
 
 <!-- valid -->
 <p>some root <strong>mixed</strong> <em>content</em></p>
+<!-- also valid -->
+<p>some root element</p>
+<p>and an other root element</p>
 ```
+
+### Bad HTML format with Standard processor
+If HTML is not well formatted, the cleaner will throw an `\Exception`. The
+string needs to be perfectly written, because it is processed by
+`simplexml_load_string($html)`, which is very strict:
+
+- tags must be closed (`<p></p>` or `<br />`)
+- attributes must be wrapped in (double-)quotes (`<hr class="test" />`)
+- opening tag `<` is not allowed in content, it must be converted in `&lt;`
+before `HtmlCleaner::clean()` is called
+
+These limitations will eventually be addressed in future releases.
 
 ## Testing
 
