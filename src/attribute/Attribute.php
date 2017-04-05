@@ -14,6 +14,12 @@ abstract class Attribute {
     private $name;
 
     /**
+     * Eventually the tag associated to the attribute
+     * @var string
+     */
+    private $tag;
+
+    /**
      * Attribute data
      * @var SimpleXMLElement
      */
@@ -23,10 +29,12 @@ abstract class Attribute {
      * Constructor
      *
      * @param string $name attribute's name
+     * @param string $tag an optional tag name linked to the attribute
      */
-    public function __construct($name)
+    public function __construct($name, $tag = null)
     {
         $this->name = $name;
+        $this->tag = $tag;
     }
 
     /**
@@ -36,6 +44,29 @@ abstract class Attribute {
      */
     public function getName() : string
     {
+        return $this->name;
+    }
+
+    /**
+     * Get the tag name associated to this attribute. Can be null
+     *
+     * @return string
+     */
+    public function getTag() : string
+    {
+        return $this->tag;
+    }
+
+    /**
+     * Get the attribute's name
+     *
+     * @return string
+     */
+    public function getFullName() : string
+    {
+        if ($this->tag) {
+            return $this->tag . ':' . $this->name;
+        }
         return $this->name;
     }
 

@@ -31,6 +31,12 @@ class HtmlCleaner {
     private $processor;
 
     /**
+     * Key structure for attribute in a specific tag
+     * @var string
+     */
+    private $fullKeyString = '%s:%s';
+
+    /**
      * HTML cleaner constructor
      *
      * @param Processor $processor Defaults to standard processor
@@ -69,7 +75,7 @@ class HtmlCleaner {
     }
 
     /**
-     * Set allowed tags, without <> (['p', 'ul', 'li'])
+     * Set allowed tags (use tag names: ['p', 'ul', 'li'])
      *
      * @param array $tags
      * @return static
@@ -89,10 +95,7 @@ class HtmlCleaner {
      */
     public function addAllowedTags(array $tags) : self
     {
-        foreach ($tags as $tag) {
-            $this->allowedTags[] = str_replace(['<', '>'], '', $tag);
-        }
-        $this->allowedTags = array_unique($this->allowedTags);
+        $this->allowedTags = array_merge($this->allowedTags, $tags);
         return $this;
     }
 
@@ -118,7 +121,11 @@ class HtmlCleaner {
     {
         foreach ($attributes as $attr) {
             if (is_string($attr)) {
-                $attr = new Keep($attr);
+                $tag = null;
+                if (strpos($attr, ':') > 0) {
+                    list($tag, $attr) = explode(':', $attr, 2);
+                }
+                $attr = new Keep($attr, $tag);
             }
             $this->setAllowedAttribute($attr);
         }
@@ -134,7 +141,7 @@ class HtmlCleaner {
      */
     public function setAllowedAttribute(Attribute $attr) : self
     {
-        $this->allowedAttributes[$attr->getName()] = $attr;
+        $this->allowedAttributes[$attr->getFullName()] = $attr;
         return $this;
     }
 
@@ -142,11 +149,13 @@ class HtmlCleaner {
      * Remove an attribute from the whitelist
      *
      * @param string $name attribute's name
+     * @param string $tag a specific tag name for this attribute
      * @return bool true if it has been removed, false if it doesn't exist
      */
-    public function removeAllowedAttribute($name) : bool
+    public function removeAllowedAttribute($name, $tag = null) : bool
     {
-        if ($this->hasAllowedAttribute($name)) {
+        if ($this->hasAllowedAttribute($name, $tag)) {
+            $key = $tag ? sprintf($this->fullKeyString, $tag, $name) : $name;
             unset($this->allowedAttributes[$name]);
             return true;
         }
@@ -167,14 +176,16 @@ class HtmlCleaner {
      * Get an allowed attribute
      *
      * @param string $name attribute's name
+     * @param string $tag a specific tag name for this attribute
      * @return Attribute
      * @throws Exception if attribute doesn't exist
      */
-    public function getAllowedAttribute($name) : Attribute
+    public function getAllowedAttribute($name, $tag = null) : Attribute
     {
-        if (!$this->hasAllowedAttribute($name)) {
+        if (!$this->hasAllowedAttribute($name, $tag)) {
             throw new Exception(sprintf('Attribute %s does not exist', $name));
         }
+        $key = $tag ? sprintf($this->fullKeyString, $tag, $name) : $name;
         return $this->allowedAttributes[$name];
     }
 
@@ -182,11 +193,13 @@ class HtmlCleaner {
      * Check if an allowed attribute exists
      *
      * @param string $name attribute's name
+     * @param string $tag a specific tag name for this attribute
      * @return bool
      */
-    public function hasAllowedAttribute($name) : bool
+    public function hasAllowedAttribute($name, $tag = null) : bool
     {
-        return isset($this->allowedAttributes[$name]);
+        $key = $tag ? sprintf($this->fullKeyString, $tag, $name) : $name;
+        return isset($this->allowedAttributes[$key]);
     }
 
     /**
@@ -204,7 +217,8 @@ class HtmlCleaner {
         // roots. Eg: <p>1</p><p>2</p> becomes <root><p>1</p><p>2</p></root>
         $xml = @simplexml_load_string('<root>' . $pre_html . '</root>');
         if ($xml === false) {
-            throw new Exception("Bad formatted HTML");
+            $err = libxml_get_last_error();
+            throw new Exception(trim($err->message), $err->code);
         }
         $cleaned_html = '';
         if (count($xml->children())) {
@@ -245,10 +259,14 @@ class HtmlCleaner {
     private function getBadAttributes(SimpleXMLElement $element) : array
     {
         $bad_attrs = [];
-        foreach ($element->attributes() as $key => $attr) {
+        foreach ($element->attributes() as $attr_name => $attr) {
+            $key = $attr_name;
+            if ($this->hasAllowedAttribute($attr_name, $element->getName())) {
+                $key = sprintf($this->fullKeyString, $element->getName(), $attr_name);
+            }
             $cleaner = !$this->hasAllowedAttribute($key)
                 // attribute is not in the whitelist, delete it
-                ? new Remove($key)
+                ? new Remove($attr_name)
                 // attribute is in the whitelist, but maybe its content is not
                 // good, so we need to check this out
                 : $this->getAllowedAttribute($key);

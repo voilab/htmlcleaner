@@ -82,6 +82,18 @@ class StandardTest extends TestCase {
         );
     }
 
+    public function testKeepAttributeForSpecifictag()
+    {
+        $this->cleaner->addAllowedTags(['p', 'span']);
+        $this->cleaner->addAllowedAttributes([
+            new \voilab\cleaner\attribute\Keep('class', 'span')
+        ]);
+        $this->assertEquals(
+            '<p><span class="test">test</span></p>',
+            $this->cleaner->clean('<p class="test"><span class="test">test</span></p>')
+        );
+    }
+
     public function testSkippedBadFormattedHtml()
     {
         $this->cleaner->addAllowedTags(['p']);
@@ -94,15 +106,22 @@ class StandardTest extends TestCase {
     public function testBadFormattedHtmlTag()
     {
         $this->cleaner->addAllowedTags(['p']);
-        $this->expectExceptionMessage('Bad formatted HTML');
+        $this->expectExceptionMessage('Premature end of data in tag root line 1');
         $this->cleaner->clean('<p>test');
     }
 
     public function testBadFormattedHtmlContent()
     {
         $this->cleaner->addAllowedTags(['p']);
-        $this->expectExceptionMessage('Bad formatted HTML');
+        $this->expectExceptionMessage('StartTag: invalid element name');
         $this->cleaner->clean('<p>test < than test</p>');
+    }
+
+    public function testBadFormattedHtmlContentAmp()
+    {
+        $this->cleaner->addAllowedTags(['p']);
+        $this->expectExceptionMessage('xmlParseEntityRef: no name');
+        $this->cleaner->clean('<p>test & than test</p>');
     }
 
     public function testGreaterThanContentPass()
@@ -120,7 +139,7 @@ class StandardTest extends TestCase {
             ->addAllowedTags(['p'])
             ->addAllowedAttributes(['class']);
 
-        $this->expectExceptionMessage('Bad formatted HTML');
+        $this->expectExceptionMessage('Extra content at the end of the document');
         $this->cleaner->clean('<p class=test>test</p>');
     }
 }
