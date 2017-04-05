@@ -50,24 +50,11 @@ abstract class Attribute {
     /**
      * Get the tag name associated to this attribute. Can be null
      *
-     * @return string
+     * @return string|null
      */
-    public function getTag() : string
+    public function getTag()
     {
         return $this->tag;
-    }
-
-    /**
-     * Get the attribute's name
-     *
-     * @return string
-     */
-    public function getFullName() : string
-    {
-        if ($this->tag) {
-            return $this->tag . ':' . $this->name;
-        }
-        return $this->name;
     }
 
     /**
