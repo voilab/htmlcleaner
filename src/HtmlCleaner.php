@@ -31,12 +31,6 @@ class HtmlCleaner {
     private $processor;
 
     /**
-     * Key structure for attribute in a specific tag
-     * @var string
-     */
-    private $fullKeyString = '%s:%s';
-
-    /**
      * HTML cleaner constructor
      *
      * @param Processor $processor Defaults to standard processor
@@ -141,7 +135,8 @@ class HtmlCleaner {
      */
     public function setAllowedAttribute(Attribute $attr) : self
     {
-        $this->allowedAttributes[$attr->getFullName()] = $attr;
+        $key = $this->getAttributeKey($attr->getName(), $attr->getTag());
+        $this->allowedAttributes[$key] = $attr;
         return $this;
     }
 
@@ -155,8 +150,8 @@ class HtmlCleaner {
     public function removeAllowedAttribute($name, $tag = null) : bool
     {
         if ($this->hasAllowedAttribute($name, $tag)) {
-            $key = $tag ? sprintf($this->fullKeyString, $tag, $name) : $name;
-            unset($this->allowedAttributes[$name]);
+            $key = $this->getAttributeKey($name, $tag);
+            unset($this->allowedAttributes[$key]);
             return true;
         }
         return false;
@@ -183,10 +178,12 @@ class HtmlCleaner {
     public function getAllowedAttribute($name, $tag = null) : Attribute
     {
         if (!$this->hasAllowedAttribute($name, $tag)) {
-            throw new Exception(sprintf('Attribute %s does not exist', $name));
+            $tag = $tag ?: '*all*';
+            throw new Exception(sprintf(
+                'Attribute %s bound to %s tag does not exist', $name, $tag));
         }
-        $key = $tag ? sprintf($this->fullKeyString, $tag, $name) : $name;
-        return $this->allowedAttributes[$name];
+        $key = $this->getAttributeKey($name, $tag);
+        return $this->allowedAttributes[$key];
     }
 
     /**
@@ -198,7 +195,7 @@ class HtmlCleaner {
      */
     public function hasAllowedAttribute($name, $tag = null) : bool
     {
-        $key = $tag ? sprintf($this->fullKeyString, $tag, $name) : $name;
+        $key = $this->getAttributeKey($name, $tag);
         return isset($this->allowedAttributes[$key]);
     }
 
@@ -260,16 +257,20 @@ class HtmlCleaner {
     {
         $bad_attrs = [];
         foreach ($element->attributes() as $attr_name => $attr) {
-            $key = $attr_name;
             if ($this->hasAllowedAttribute($attr_name, $element->getName())) {
-                $key = sprintf($this->fullKeyString, $element->getName(), $attr_name);
-            }
-            $cleaner = !$this->hasAllowedAttribute($key)
-                // attribute is not in the whitelist, delete it
-                ? new Remove($attr_name)
+                // attribute is in the whitelist, and bound to a tag
+                $cleaner = $this->getAllowedAttribute(
+                    $attr_name,
+                    $element->getName()
+                );
+            } elseif ($this->hasAllowedAttribute($attr_name)) {
                 // attribute is in the whitelist, but maybe its content is not
                 // good, so we need to check this out
-                : $this->getAllowedAttribute($key);
+                $cleaner = $this->getAllowedAttribute($attr_name);
+            } else {
+                // attribute is not in the whitelist, delete it
+                $cleaner = new Remove($attr_name);
+            }
 
             // clone is mandatory, because it creates an error with
             // dom_import_simplexml if it's omitted. Some sort of conflict
@@ -295,5 +296,17 @@ class HtmlCleaner {
         foreach ($attrs as $attr) {
             $attr->clean($dom);
         }
+    }
+
+    /**
+     * Get the attribute key. It can be alone or bound to a tag
+     *
+     * @param string $name attribute's name
+     * @param string $tag tag's name
+     * @return string
+     */
+    private function getAttributeKey($name, $tag) : string
+    {
+        return $tag ? $tag . ':'. $name : $name;
     }
 }
