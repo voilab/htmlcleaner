@@ -55,13 +55,26 @@ $cleaner->addAllowedTags(['p', 'strong']);
 // call clean method
 ```
 
-### Allow some tags and attributes
+### Allow some tags and attributes (regardless of tags)
 
 ``` php
 // create cleaner...
 $cleaner
     ->addAllowedTags(['p', 'span'])
     ->addAllowedAttributes(['class']);
+// call clean method
+```
+
+### Allow some attributes only on certain tags
+
+``` php
+// create cleaner...
+$cleaner
+    ->addAllowedTags(['p', 'span'])
+    ->addAllowedAttributes([
+        // keep attribute "class" only for spans
+        new \voilab\cleaner\attribute\Keep('class', 'span')
+    ]);
 // call clean method
 ```
 
@@ -109,20 +122,22 @@ $cleaner
     ]);
 ```
 
-> Note that allowed attributes are not bound to a specific tag. In the example
-> above, the href attribute will be valid for every HTML tag.
+> Note that allowed attributes can be bound or not to a specific tag. In the
+> example above, the href attribute will be valid for every HTML tag. If you
+> want to bind the attribute to a tag, you need to specify it as a second
+> parameter.
 
 ## Known limitations
 
 ### Root mixed content
-Mixed content is not allowed in root position.
+Mixed content outside tags is not allowed in root position.
 
 ``` html
-<!-- not valid: parts "some root " and " and " will disappear -->
-some root <strong>mixed</strong> and <em>content</em>
+<!-- not valid: parts "some root " and " special " will disappear -->
+some root <strong>mixed</strong> special <em>content</em>
 
 <!-- valid -->
-<p>some root <strong>mixed</strong> <em>content</em></p>
+<p>some root <strong>mixed</strong> special <em>content</em></p>
 <!-- also valid -->
 <p>some root element</p>
 <p>and an other root element</p>
@@ -135,8 +150,8 @@ string needs to be perfectly written, because it is processed by
 
 - tags must be closed (`<p></p>` or `<br />`)
 - attributes must be wrapped in (double-)quotes (`<hr class="test" />`)
-- opening tag `<` is not allowed in content, it must be converted in `&lt;`
-before `HtmlCleaner::clean()` is called
+- opening tag `<` and `&` are not allowed in content, they must be converted
+respectivly in `&lt;` and `&amp;` before `HtmlCleaner::clean()` is called
 
 These limitations will eventually be addressed in future releases.
 
