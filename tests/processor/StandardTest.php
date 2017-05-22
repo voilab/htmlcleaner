@@ -142,4 +142,26 @@ class StandardTest extends TestCase {
         $this->expectExceptionMessage('Extra content at the end of the document');
         $this->cleaner->clean('<p class=test>test</p>');
     }
+
+    public function testBadFormattedHtmlAttributeQuote()
+    {
+        $this->cleaner
+            ->addAllowedTags(['p'])
+            ->addAllowedAttributes(['class']);
+
+        $this->expectExceptionMessage('Premature end of data in tag root line 1');
+        $this->cleaner->clean('<p><span class="te"st">test</span> test</p>');
+    }
+
+    public function testBadFormattedHtmlRootAttributeQuote()
+    {
+        $this->cleaner
+            ->addAllowedTags(['p'])
+            ->addAllowedAttributes(['class']);
+
+        $this->assertEquals(
+            '',
+            $this->cleaner->clean('<p class="te"st">test <strong>test<em> test</p>')
+        );
+    }
 }
