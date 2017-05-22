@@ -72,6 +72,15 @@ class HtmlCleanerTest extends TestCase {
         );
     }
 
+    public function testAddAllowedAttributeTagAsString()
+    {
+        $this->cleaner->addAllowedAttributes(['class:span']);
+        $this->assertInstanceOf(
+            '\voilab\cleaner\attribute\Keep',
+            $this->cleaner->getAllowedAttribute('class', 'span')
+        );
+    }
+
     public function testGetAllowedAttribute()
     {
         $this->cleaner->setAllowedAttribute(new \voilab\cleaner\attribute\Keep('class'));

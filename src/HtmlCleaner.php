@@ -31,16 +31,19 @@ class HtmlCleaner {
     private $processor;
 
     /**
+     * Separator between tag and attribute
+     * @var string
+     */
+    private $tagSeparator = ':';
+
+    /**
      * HTML cleaner constructor
      *
      * @param Processor $processor Defaults to standard processor
      */
     public function __construct(Processor $processor = null)
     {
-        if (!$processor) {
-            $processor = new StandardProcessor();
-        }
-        $this->setProcessor($processor);
+        $this->setProcessor($processor ?: new StandardProcessor());
     }
 
     /**
@@ -89,7 +92,9 @@ class HtmlCleaner {
      */
     public function addAllowedTags(array $tags) : self
     {
-        $this->allowedTags = array_merge($this->allowedTags, $tags);
+        $this->allowedTags = array_unique(
+            array_merge($this->allowedTags, $tags)
+        );
         return $this;
     }
 
@@ -116,8 +121,8 @@ class HtmlCleaner {
         foreach ($attributes as $attr) {
             if (is_string($attr)) {
                 $tag = null;
-                if (strpos($attr, ':') > 0) {
-                    list($tag, $attr) = explode(':', $attr, 2);
+                if (strpos($attr, $this->tagSeparator) > 0) {
+                    list($attr, $tag) = explode($this->tagSeparator, $attr, 2);
                 }
                 $attr = new Keep($attr, $tag);
             }
@@ -264,8 +269,7 @@ class HtmlCleaner {
                     $element->getName()
                 );
             } elseif ($this->hasAllowedAttribute($attr_name)) {
-                // attribute is in the whitelist, but maybe its content is not
-                // good, so we need to check this out
+                // attribute is in the whitelist, and not bound to any tag
                 $cleaner = $this->getAllowedAttribute($attr_name);
             } else {
                 // attribute is not in the whitelist, delete it
@@ -307,6 +311,6 @@ class HtmlCleaner {
      */
     private function getAttributeKey($name, $tag) : string
     {
-        return $tag ? $tag . ':'. $name : $name;
+        return $tag ? $tag . $this->tagSeparator. $name : $name;
     }
 }

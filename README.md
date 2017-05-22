@@ -73,7 +73,10 @@ $cleaner
     ->addAllowedTags(['p', 'span'])
     ->addAllowedAttributes([
         // keep attribute "class" only for spans
-        new \voilab\cleaner\attribute\Keep('class', 'span')
+        new \voilab\cleaner\attribute\Keep('class', 'span'),
+
+        // you can use this shorthand too, as a string
+        'style:span'
     ]);
 // call clean method
 ```
@@ -150,6 +153,8 @@ string needs to be perfectly written, because it is processed by
 
 - tags must be closed (`<p></p>` or `<br />`)
 - attributes must be wrapped in (double-)quotes (`<hr class="test" />`)
+- (double-)quote is not allowed in attribute content, it must be converted in
+`&quot;` before `HtmlCleaner::clean()` is called
 - opening tag `<` and `&` are not allowed in content, they must be converted
 respectivly in `&lt;` and `&amp;` before `HtmlCleaner::clean()` is called
 
